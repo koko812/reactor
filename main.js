@@ -82,9 +82,21 @@ const createReactor = () => {
     reactorList.push(reactor)
 }
 
+const checkCollision = (a, b, ratio = 0.9) => {
+    ax = a.x
+    ay = a.y
+    bx = b.x
+    by = b.y
+    if ((ax - bx) ** 2 + (ay - by) ** 2 < (size * ratio) ** 2) {
+        return true
+    } else {
+        return false
+    }
+}
 
 let container;
 let countChar;
+let dieText;
 
 const init = () => {
     container = document.getElementById('container')
@@ -95,6 +107,14 @@ const init = () => {
     countChar = new Character('10')
     container.append(countChar.element)
     countChar.setPosition(heroX, heroY - size)
+
+    dieText = new Character('You\ndied.')
+    dieText.element.style.position = 'absolute'
+    dieText.element.style.color = '#f00'
+    dieText.element.style.display = 'none'
+    dieText.element.style.fontSize = '80px'
+    dieText.setPosition(width, height)
+    container.appendChild(dieText.element)
 
     let originHeroX = 0;
     let originPageX = -1;
@@ -127,11 +147,29 @@ const init = () => {
 
 }
 
+let gameover = false
 let cnt = 0;
+let countDown = 3000 + Date.now();
 window.onload = async () => {
     init()
-    createBullet(heroX, heroY - size, 0, -1);
     while (true) {
+        cnt++;
+        // createBullet の入れ場所に迷った
+        // 下側の大きな else に入れていたせいで，無限に生成されてしまっていて，
+        // 発車した瞬間にタイムカウントが始まってしまっていた
+        if (countDown > 0) {
+            let count = countDown - Date.now()
+            countChar.element.textContent = `${Math.ceil(count / 1000)}`
+            if (count < 0) {
+                createBullet(heroX, heroY - size, 0, -1);
+                countDown = 0
+            }
+        } else {
+            if (bulletList.length === 0) {
+                countDown = 3000 + Date.now()
+            }
+            countChar.element.textContent = ''
+        }
 
         // console.log が変なところに入ってたら，フリーズすることがある？かもしれない
         // 何が悪かったのかはちょっと謎
@@ -152,15 +190,52 @@ window.onload = async () => {
             if (y > height) {
                 bullet.remove()
             }
+            if (bullet.willRemove) {
+                continue
+            }
+            for (const reactor of reactorList) {
+                if (reactor.willRemove) {
+                    continue
+                } else {
+                    if (checkCollision(bullet, reactor)) {
+                        bullet.remove()
+                        if (bullet.dx != 0) {
+                            createBullet(bullet.x, bullet.y, 0, 1)
+                            createBullet(bullet.x, bullet.y, 0, -1)
+                        }
+                        if (bullet.dy != 0) {
+                            createBullet(bullet.x, bullet.y, 1, 0)
+                            createBullet(bullet.x, bullet.y, -1, 0)
+                        }
+                        reactor.remove()
+                    } else {
+                        //createReactor()
+                    }
+                }
+            }
 
             bullet.setPosition(x, y)
-            console.log(bullet);
+            //console.log(bullet);
+            if (checkCollision(hero, bullet)) {
+                gameover = true
+            }
         }
         // この書き方はテクくてかっこいいね
-        bulletList = bulletList.filter(v => !v.willRemove)
-
-        if (Math.random() < 0.05) {
+        if (Math.random() < 0.02 + cnt / 100000) {
             createReactor();
+            //console.log(Date.now());
+        }
+
+        bulletList = bulletList.filter(v => !v.willRemove)
+        reactorList = reactorList.filter(v => !v.willRemove)
+
+        if (gameover) {
+            // ここの setPosition, 初期化の時と位置がなぜか変わってズレるのがよくわからんかった
+            // 文字サイズが，responsive になってないので，そこをどうにかしたいところ
+            hero.element.textContent = '☠️'
+            dieText.setPosition(width/4, height/8)
+            dieText.element.style.display = ''
+            return
         }
     }
 }
