@@ -1,7 +1,6 @@
 const width = 300
 const height = 300
 const size = 30
-let container = null
 
 class Character {
     constructor(text = "") {
@@ -83,11 +82,19 @@ const createReactor = () => {
     reactorList.push(reactor)
 }
 
+
+let container;
+let countChar;
+
 const init = () => {
     container = document.getElementById('container')
     hero = new Character('🐥')
     container.appendChild(hero.element)
     hero.setPosition(heroX, heroY)
+
+    countChar = new Character('10')
+    container.append(countChar.element)
+    countChar.setPosition(heroX, heroY - size)
 
     let originHeroX = 0;
     let originPageX = -1;
@@ -110,7 +117,8 @@ const init = () => {
             if (heroX > width) heroX = width;
             if (heroX < 0) heroX = 0;
             hero.setPosition(heroX, heroY)
-            //console.log(heroX);
+            countChar.setPosition(heroX, heroY - size)
+            //console.log(heroX)
         }
     }
     document.onpointerup = (e) => {
@@ -124,13 +132,9 @@ window.onload = async () => {
     init()
     createBullet(heroX, heroY - size, 0, -1);
     while (true) {
-        //cnt++;
-        //if (cnt % 10 == 0) {
-        //    createBullet(heroX, heroY - size, 0, -1);
-        //}
 
         // console.log が変なところに入ってたら，フリーズすることがある？かもしれない
-        // 何が悪かったのかはちょっと謎K
+        // 何が悪かったのかはちょっと謎
         await new Promise(r => setTimeout(r, 16))
         for (const bullet of bulletList) {
             let x = bullet.x + bulletSpeed * bullet.dx
@@ -152,6 +156,7 @@ window.onload = async () => {
             bullet.setPosition(x, y)
             console.log(bullet);
         }
+        // この書き方はテクくてかっこいいね
         bulletList = bulletList.filter(v => !v.willRemove)
 
         if (Math.random() < 0.05) {
