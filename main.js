@@ -51,19 +51,36 @@ class Character {
             this.element.textContent = '↑'
         }
     }
+
+    remove() {
+        this.willRemove = true
+        this.element.remove()
+    }
 }
 
 let hero;
 let heroX = width / 2;
 let heroY = height - size;
 
+let bulletSpeed = 5
 let bulletList = []
 const createBullet = (x, y, dx, dy) => {
     const bullet = new Character();
     bullet.setPosition(x, y)
     bullet.setDelta(dx, dy)
-    container.appendChild(bullet.element)
+    container.append(bullet.element)
     bulletList.push(bullet)
+}
+
+let reactorList = []
+const createReactor = () => {
+    const reactor = new Character('⚡️');
+    const x = Math.random() * width
+    const y = Math.random() * 0.7 * height
+    console.log('reactor');
+    reactor.setPosition(x, y)
+    container.append(reactor.element)
+    reactorList.push(reactor)
 }
 
 const init = () => {
@@ -102,18 +119,43 @@ const init = () => {
 
 }
 
+let cnt = 0;
 window.onload = async () => {
     init()
-    createBullet(heroX, heroY-size, 0, -1);
-    while(true){
+    createBullet(heroX, heroY - size, 0, -1);
+    while (true) {
+        //cnt++;
+        //if (cnt % 10 == 0) {
+        //    createBullet(heroX, heroY - size, 0, -1);
+        //}
+
         // console.log が変なところに入ってたら，フリーズすることがある？かもしれない
         // 何が悪かったのかはちょっと謎K
         await new Promise(r => setTimeout(r, 16))
         for (const bullet of bulletList) {
-            let x = bullet.x + bullet.dx
-            let y = bullet.y + bullet.dy
-            bullet.setPosition(x,y)
+            let x = bullet.x + bulletSpeed * bullet.dx
+            let y = bullet.y + bulletSpeed * bullet.dy
+
+            if (x < 0 || x > width) {
+                bullet.setDelta(bullet.dx * -1, bullet.dy)
+                x = bullet.x + bulletSpeed * bullet.dx
+            }
+            if (y < 0) {
+                bullet.setDelta(bullet.dx, bullet.dy * -1)
+                y = bullet.y + bulletSpeed * bullet.dy
+
+            }
+            if (y > height) {
+                bullet.remove()
+            }
+
+            bullet.setPosition(x, y)
             console.log(bullet);
+        }
+        bulletList = bulletList.filter(v => !v.willRemove)
+
+        if (Math.random() < 0.05) {
+            createReactor();
         }
     }
 }
