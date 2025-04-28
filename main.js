@@ -1,6 +1,7 @@
 const width = 300
 const height = 300
 const size = 30
+let container = null
 
 class Character {
     constructor(text = "") {
@@ -33,14 +34,40 @@ class Character {
         this.element.style.left = `${x - size / 2}px`
         this.element.style.top = `${y - size / 2}px`
     }
+
+    setDelta(dx, dy) {
+        this.dx = dx
+        this.dy = dy
+        if (dx === 1) {
+            this.element.textContent = '→'
+        }
+        else if (dx === -1) {
+            this.element.textContent = '←'
+        }
+        else if (dy === 1) {
+            this.element.textContent = '↓'
+        }
+        else if (dy === -1) {
+            this.element.textContent = '↑'
+        }
+    }
 }
 
 let hero;
 let heroX = width / 2;
 let heroY = height - size;
 
+let bulletList = []
+const createBullet = (x, y, dx, dy) => {
+    const bullet = new Character();
+    bullet.setPosition(x, y)
+    bullet.setDelta(dx, dy)
+    container.appendChild(bullet.element)
+    bulletList.push(bullet)
+}
+
 const init = () => {
-    const container = document.getElementById('container')
+    container = document.getElementById('container')
     hero = new Character('🐥')
     container.appendChild(hero.element)
     hero.setPosition(heroX, heroY)
@@ -66,7 +93,7 @@ const init = () => {
             if (heroX > width) heroX = width;
             if (heroX < 0) heroX = 0;
             hero.setPosition(heroX, heroY)
-            console.log(heroX);
+            //console.log(heroX);
         }
     }
     document.onpointerup = (e) => {
@@ -75,6 +102,18 @@ const init = () => {
 
 }
 
-window.onload = () => {
+window.onload = async () => {
     init()
+    createBullet(heroX, heroY-size, 0, -1);
+    while(true){
+        // console.log が変なところに入ってたら，フリーズすることがある？かもしれない
+        // 何が悪かったのかはちょっと謎K
+        await new Promise(r => setTimeout(r, 16))
+        for (const bullet of bulletList) {
+            let x = bullet.x + bullet.dx
+            let y = bullet.y + bullet.dy
+            bullet.setPosition(x,y)
+            console.log(bullet);
+        }
+    }
 }
